@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Menu, X } from "lucide-react"
 import successPoolLogo from "../../assets/success-pool-logo.svg"
+import { useAuth } from "../../context/useAuth"
 
 const primaryLinks = [
   { label: "Offres d'emploi", to: "/jobs", type: "route" },
@@ -14,8 +15,17 @@ const primaryLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const { user, logout } = useAuth()
+
+  const isRecruiter = user?.role === "recruiter"
+  const recruiterLinks = [{ label: "Mes offres", to: "/mes-offres", type: "route" }]
+  const activeLinks = isRecruiter ? recruiterLinks : primaryLinks
 
   const closeMenu = () => setIsOpen(false)
+  const handleLogout = () => {
+    logout()
+    closeMenu()
+  }
 
   return (
   <nav className="sticky top-0 z-50 border-b border-border/60 bg-white/80 shadow-[0_10px_40px_-18px_rgba(15,23,42,0.35)] backdrop-blur-xl supports-backdrop-filter:backdrop-blur-xl">
@@ -47,9 +57,9 @@ export default function Navbar() {
             isOpen ? "opacity-100" : "pointer-events-none opacity-0"
           } absolute left-3 right-3 top-20 origin-top rounded-2xl border border-border/70 bg-white/95 p-6 shadow-2xl transition duration-200 ease-out md:static md:pointer-events-auto md:top-auto md:flex md:h-auto md:w-auto md:translate-x-0 md:items-center md:gap-10 md:border-0 md:bg-transparent md:p-0 md:opacity-100 md:shadow-none`}
         >
-          <div className="flex flex-col gap-4 text-base text-muted-foreground md:flex-row md:items-center md:gap-8">
-            {primaryLinks.map((item) => {
-              const baseClasses = "font-medium transition-colors duration-200 hover:text-primary"
+          <div className="flex flex-col gap-4 text-base text-muted-foreground md:flex-row md:items-center md:gap-6">
+            {activeLinks.map((item) => {
+              const baseClasses = "font-medium whitespace-nowrap transition-colors duration-200 hover:text-primary"
               return item.type === "route" ? (
                 <Link key={item.label} to={item.to} className={baseClasses} onClick={closeMenu}>
                   {item.label}
@@ -63,18 +73,32 @@ export default function Navbar() {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 md:mt-0 md:flex-row md:items-center md:gap-3">
-            <button className="rounded-full border border-border/70 px-5 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary">
-              Connexion
-            </button>
-            <button className="rounded-full bg-linear-to-r from-primary to-accent px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:shadow-md">
-              S'inscrire
-            </button>
-            <a
-              href="#recruiter"
-              className="rounded-full bg-secondary/60 px-5 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary hover:text-foreground/90"
-            >
-              Espace Recruteur
-            </a>
+            {isRecruiter ? (
+              <>
+                <Link
+                  to="/recruiter"
+                  className="rounded-full bg-secondary/60 px-5 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary hover:text-foreground/90"
+                  onClick={closeMenu}
+                >
+                  Portail Recruteur
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-full border border-primary px-5 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+                >
+                  Se déconnecter
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/recruiter"
+                className="rounded-full bg-secondary/60 px-5 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary hover:text-foreground/90"
+                onClick={closeMenu}
+              >
+                Espace Recruteur
+              </Link>
+            )}
           </div>
         </div>
       </div>

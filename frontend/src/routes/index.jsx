@@ -1,28 +1,35 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from '../components/layout/AppLayout'
+import { AuthProvider } from '../context/AuthProvider'
 
 const HomePage = lazy(() => import('../pages/Accueil'))
 const JobsPage = lazy(() => import('../pages/Jobs'))
 const JobDetailsPage = lazy(() => import('../pages/Jobs/Details'))
 const AboutPage = lazy(() => import('../pages/About'))
+const RecruiterPage = lazy(() => import('../pages/Recruiter'))
+const MyOffersPage = lazy(() => import('../pages/Recruiter/MyOffers'))
 const NotFoundPage = lazy(() => import('../pages/NotFound'))
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
-      <AppLayout>
-        <Suspense fallback={<div>Loading...</div>}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/jobs/:id" element={<JobDetailsPage />} />
-            <Route path="/404" element={<NotFoundPage />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Routes>
-        </Suspense>
-      </AppLayout>
+      <AuthProvider>
+        <AppLayout>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/jobs" element={<JobsPage />} />
+              <Route path="/jobs/:id" element={<JobDetailsPage />} />
+              <Route path="/recruiter" element={<RecruiterPage />} />
+              <Route path="/mes-offres" element={<MyOffersPage />} />
+              <Route path="/404" element={<NotFoundPage />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
+          </Suspense>
+        </AppLayout>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

@@ -14,7 +14,7 @@ const footerLinks = [
   {
     title: "Entreprises",
     items: [
-      { label: "Recruter", href: "#" },
+      { label: "Recruter", href: "/recruiter" },
       { label: "Tarifs", href: "#pricing" },
       { label: "Support", href: "#" },
       { label: "API", href: "#" },
