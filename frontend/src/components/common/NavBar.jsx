@@ -63,12 +63,12 @@ export default function Navbar() {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 md:mt-0 md:flex-row md:items-center md:gap-3">
-            <button className="rounded-full border border-border/70 px-5 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary">
+            <Link to="/login" className="rounded-full border border-border/70 px-5 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary" onClick={closeMenu}>
               Connexion
-            </button>
-            <button className="rounded-full bg-linear-to-r from-primary to-accent px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:shadow-md">
+            </Link>
+            <Link to="/signup" className="rounded-full bg-linear-to-r from-primary to-accent px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:shadow-md" onClick={closeMenu}>
               S'inscrire
-            </button>
+            </Link>
             <a
               href="#recruiter"
               className="rounded-full bg-secondary/60 px-5 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary hover:text-foreground/90"
