@@ -165,7 +165,7 @@ export default function JobsPage() {
                     </div>
 
                     <button className="w-full py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-opacity-90 transition">
-                      Candidater
+                      Consulter
                     </button>
                   </div>
                 ))
