@@ -1,16 +1,8 @@
 import { useMemo, useState, useCallback } from 'react'
+import { JOBS } from './data'
 
 export function useJobs() {
-  const allJobs = useMemo(() => [
-    { id: 1, title: 'Designer UX/UI Senior', company: 'TechFlow', location: 'Paris, France', type: 'CDI', salary: '50-65k', tags: ['Design', 'Figma', 'User Research'], logo: 'TF', category: 'Design', level: 'Senior' },
-    { id: 2, title: 'Développeur Full Stack', company: 'StartupX', location: 'Télétravail', type: 'CDI', salary: '45-60k', tags: ['React', 'Node.js', 'PostgreSQL'], logo: 'SX', category: 'Développement', level: 'Mid' },
-    { id: 3, title: 'Product Manager', company: 'DataCore', location: 'Lyon, France', type: 'CDI', salary: '48-62k', tags: ['Product', 'Analytics', 'Leadership'], logo: 'DC', category: 'Gestion de Produit', level: 'Senior' },
-    { id: 4, title: 'Développeur Backend Python', company: 'CloudSync', location: 'Toulouse, France', type: 'CDI', salary: '42-55k', tags: ['Python', 'AWS', 'Docker'], logo: 'CS', category: 'Développement', level: 'Mid' },
-    { id: 5, title: 'Développeur Frontend React', company: 'WebStudio', location: 'Paris, France', type: 'CDI', salary: '40-52k', tags: ['React', 'TypeScript', 'Tailwind'], logo: 'WS', category: 'Développement', level: 'Junior' },
-    { id: 6, title: 'Data Scientist', company: 'AICore', location: 'Télétravail', type: 'CDI', salary: '55-70k', tags: ['Python', 'Machine Learning', 'SQL'], logo: 'AC', category: 'Data', level: 'Senior' },
-    { id: 7, title: 'Chef de Projet IT', company: 'ConsultTech', location: 'Bordeaux, France', type: 'CDI', salary: '45-55k', tags: ['Agile', 'Leadership', 'Budget'], logo: 'CT', category: 'Gestion de Projet', level: 'Senior' },
-    { id: 8, title: 'DevOps Engineer', company: 'CloudInfra', location: 'Télétravail', type: 'CDI', salary: '50-65k', tags: ['Kubernetes', 'AWS', 'Docker'], logo: 'CI', category: 'Infrastructure', level: 'Mid' },
-  ], [])
+  const allJobs = useMemo(() => JOBS, [])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')

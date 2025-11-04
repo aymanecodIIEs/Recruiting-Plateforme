@@ -4,6 +4,7 @@ import AppLayout from '../components/layout/AppLayout'
 
 const HomePage = lazy(() => import('../pages/Accueil'))
 const JobsPage = lazy(() => import('../pages/Jobs'))
+const JobDetailsPage = lazy(() => import('../pages/Jobs/Details'))
 const AboutPage = lazy(() => import('../pages/About'))
 const NotFoundPage = lazy(() => import('../pages/NotFound'))
 
@@ -16,6 +17,7 @@ export default function AppRoutes() {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/:id" element={<JobDetailsPage />} />
             <Route path="/404" element={<NotFoundPage />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>

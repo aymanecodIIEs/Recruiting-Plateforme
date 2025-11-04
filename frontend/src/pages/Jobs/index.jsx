@@ -1,4 +1,5 @@
 import { Search, MapPin, Clock, DollarSign, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useJobs } from './useJobs'
 
 export default function JobsPage() {
@@ -164,9 +165,9 @@ export default function JobsPage() {
                       ))}
                     </div>
 
-                    <button className="w-full py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-opacity-90 transition">
+                    <Link to={`/jobs/${job.id}`} className="w-full block text-center py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-opacity-90 transition">
                       Consulter
-                    </button>
+                    </Link>
                   </div>
                 ))
               ) : (
