@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from '../components/layout/AppLayout'
 
 const HomePage = lazy(() => import('../pages/Accueil'))
+const JobsPage = lazy(() => import('../pages/Jobs'))
 const AboutPage = lazy(() => import('../pages/About'))
 const NotFoundPage = lazy(() => import('../pages/NotFound'))
 
@@ -14,6 +15,7 @@ export default function AppRoutes() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
             <Route path="/404" element={<NotFoundPage />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>

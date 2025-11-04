@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { Menu, X } from "lucide-react"
 
 export default function Navbar() {
@@ -25,9 +26,9 @@ export default function Navbar() {
             className={`${isOpen ? "block" : "hidden"} md:block absolute md:static top-16 left-0 right-0 md:top-auto bg-white md:bg-transparent border-b md:border-b-0 border-border p-4 md:p-0`}
           >
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-              <a href="#jobs" className="text-foreground hover:text-primary transition">
+              <Link to="/jobs" className="text-foreground hover:text-primary transition" onClick={() => setIsOpen(false)}>
                 Offres d'emploi
-              </a>
+              </Link>
               <a href="#companies" className="text-foreground hover:text-primary transition">
                 Entreprises
               </a>
