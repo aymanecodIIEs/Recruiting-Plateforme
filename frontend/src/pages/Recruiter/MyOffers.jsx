@@ -14,12 +14,17 @@ const CONTRACT_TYPES = [
   "Intérim",
 ]
 
+const SKILL_IMPORTANCE_LEVELS = [
+  { label: "Importante", value: "Importante" },
+  { label: "Souhaitée", value: "Souhaitée" },
+]
+
 const INITIAL_OFFERS = [
   {
     id: "offer-1",
     title: "Lead Data Scientist - Lutte Anti-Fraude",
     department: "Société Générale · Direction des Risques",
-    status: "En entretien",
+    status: "Disponible",
     publishedAt: "Publié le 02/11/2025",
     location: "Paris · Hybride",
     contractType: "CDI",
@@ -47,13 +52,17 @@ const INITIAL_OFFERS = [
       },
     ],
     keywords: ["Anti-fraude", "Leadership squad", "Data Science"],
-    skills: ["Python", "Spark", "Détection d'anomalies"],
+    skills: [
+      { name: "Python", importance: "Importante" },
+      { name: "Spark", importance: "Importante" },
+      { name: "Détection d'anomalies", importance: "Souhaitée" },
+    ],
   },
   {
     id: "offer-2",
     title: "Product Manager - Banque Mobile",
     department: "Société Générale · Digital Factory",
-    status: "Ouverte",
+    status: "Fermée",
     publishedAt: "Publié le 28/10/2025",
     location: "Lille · Remote partiel",
   contractType: "CDI",
@@ -74,13 +83,17 @@ const INITIAL_OFFERS = [
       },
     ],
     keywords: ["Roadmap produit", "Banque mobile", "Go-to-market"],
-    skills: ["Product discovery", "Analytics", "Agilité"],
+    skills: [
+      { name: "Product discovery", importance: "Importante" },
+      { name: "Analytics", importance: "Importante" },
+      { name: "Agilité", importance: "Souhaitée" },
+    ],
   },
   {
     id: "offer-3",
     title: "Compliance Officer - KYC Corporate",
     department: "Société Générale · Conformité",
-    status: "En onboarding",
+    status: "Disponible",
     publishedAt: "Publié le 19/10/2025",
     location: "Lyon · Présentiel",
     contractType: "CDD",
@@ -102,15 +115,18 @@ const INITIAL_OFFERS = [
       },
     ],
     keywords: ["KYC", "Grands comptes", "Conformité"],
-    skills: ["Veille réglementaire", "Analyse risque", "Pilotage dossier"],
+    skills: [
+      { name: "Veille réglementaire", importance: "Importante" },
+      { name: "Analyse risque", importance: "Importante" },
+      { name: "Pilotage dossier", importance: "Souhaitée" },
+    ],
   },
 ]
 
 const STATUS_FILTERS = [
   { label: "Toutes", value: "Toutes" },
-  { label: "Ouverte", value: "Ouverte" },
-  { label: "En entretien", value: "En entretien" },
-  { label: "En onboarding", value: "En onboarding" },
+  { label: "Disponible", value: "Disponible" },
+  { label: "Fermée", value: "Fermée" },
 ]
 
 export default function MyOffers() {
@@ -125,7 +141,7 @@ export default function MyOffers() {
   const [newOffer, setNewOffer] = useState({
     title: "",
     department: `${recruiterCompany} · Département`,
-    status: "Ouverte",
+    status: "Disponible",
     location: "",
     contractType: "",
     contractDuration: "",
@@ -136,7 +152,8 @@ export default function MyOffers() {
     mission: "",
     keywords: "",
     skills: [],
-    skillInput: "",
+    skillName: "",
+    skillImportance: "Importante",
   })
 
   const filteredOffers = useMemo(() => {
@@ -150,7 +167,7 @@ export default function MyOffers() {
     setNewOffer({
       title: "",
       department: `${recruiterCompany} · Département`,
-      status: "Ouverte",
+      status: "Disponible",
       location: "",
       contractType: "",
       contractDuration: "",
@@ -161,7 +178,8 @@ export default function MyOffers() {
       mission: "",
       keywords: "",
       skills: [],
-      skillInput: "",
+      skillName: "",
+      skillImportance: "Importante",
     })
   }
 
@@ -181,19 +199,21 @@ export default function MyOffers() {
 
   const handleAddSkill = () => {
     setNewOffer((prev) => {
-      const value = prev.skillInput.trim()
-      if (!value) {
+      const name = prev.skillName.trim()
+      if (!name) {
         return prev
       }
 
-      if (prev.skills.includes(value)) {
-        return { ...prev, skillInput: "" }
+      const alreadyExists = prev.skills.some((skill) => skill.name.toLowerCase() === name.toLowerCase())
+      if (alreadyExists) {
+        return { ...prev, skillName: "" }
       }
 
       return {
         ...prev,
-        skills: [...prev.skills, value],
-        skillInput: "",
+        skills: [...prev.skills, { name, importance: prev.skillImportance }],
+        skillName: "",
+        skillImportance: prev.skillImportance,
       }
     })
   }
@@ -201,7 +221,9 @@ export default function MyOffers() {
   const handleRemoveSkill = (skillToRemove) => {
     setNewOffer((prev) => ({
       ...prev,
-      skills: prev.skills.filter((skill) => skill !== skillToRemove),
+      skills: prev.skills.filter(
+        (skill) => !(skill.name === skillToRemove.name && skill.importance === skillToRemove.importance),
+      ),
     }))
   }
 
@@ -215,7 +237,7 @@ export default function MyOffers() {
 
     const mission = newOffer.mission.trim()
 
-    const skills = newOffer.skills.filter(Boolean)
+  const skills = newOffer.skills.filter((skill) => Boolean(skill?.name))
 
     const offerToAdd = {
       id: `offer-${Date.now()}`,
@@ -347,7 +369,13 @@ export default function MyOffers() {
                     <p className="text-xs text-muted-foreground">{offer.location}</p>
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${
+                        offer.status === "Fermée"
+                          ? "border-red-200 bg-red-50 text-red-600"
+                          : "border-primary/50 bg-primary/10 text-primary"
+                      }`}
+                    >
                       {offer.status}
                     </span>
                     <p>{offer.publishedAt}</p>
@@ -415,15 +443,32 @@ export default function MyOffers() {
                       <Sparkles size={14} /> Compétences maîtres
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {offer.skills.map((tag) => (
-                        <span
-                          key={`${offer.id}-skill-${tag}`}
-                          className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm"
-                        >
-                          <Sparkles size={12} />
-                          {tag}
-                        </span>
-                      ))}
+                      {offer.skills.map((skill) => {
+                        const isMandatory = skill.importance === "Importante"
+                        return (
+                          <span
+                            key={`${offer.id}-skill-${skill.name}-${skill.importance}`}
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ${
+                              isMandatory
+                                ? "border-primary/60 bg-primary/10 text-primary"
+                                : "border-border/60 bg-white text-muted-foreground"
+                            }`}
+                          >
+                            <Sparkles
+                              size={12}
+                              className={isMandatory ? "text-primary" : "text-muted-foreground"}
+                            />
+                            {skill.name}
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                isMandatory ? "bg-primary/20 text-primary" : "bg-secondary/70 text-muted-foreground"
+                              }`}
+                            >
+                              {isMandatory ? "Importante" : skill.importance}
+                            </span>
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
@@ -682,22 +727,36 @@ function AddOfferModal({ onClose, onSubmit, newOffer, onChange, onAddSkill, onRe
           <div className="space-y-2">
             <label className="block font-medium text-muted-foreground">Compétences & expertises</label>
             <div className="rounded-2xl border border-border/70 px-4 py-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
-              <div className="flex items-center gap-3">
-                <Sparkles size={18} className="text-muted-foreground" />
-                <input
-                  type="text"
-                  name="skillInput"
-                  value={newOffer.skillInput}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+                <div className="flex flex-1 items-center gap-3 rounded-2xl border border-border/70 px-3 py-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30">
+                  <Sparkles size={18} className="text-muted-foreground" />
+                  <input
+                    type="text"
+                    name="skillName"
+                    value={newOffer.skillName}
+                    onChange={onChange}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault()
+                        onAddSkill()
+                      }
+                    }}
+                    placeholder="Ex : Ansible"
+                    className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
+                  />
+                </div>
+                <select
+                  name="skillImportance"
+                  value={newOffer.skillImportance}
                   onChange={onChange}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault()
-                      onAddSkill()
-                    }
-                  }}
-                  placeholder="Ansible, Terraform, GitLab..."
-                  className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
-                />
+                  className="w-full rounded-2xl border border-border/70 bg-white px-3 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-48"
+                >
+                  {SKILL_IMPORTANCE_LEVELS.map((level) => (
+                    <option key={level.value} value={level.value}>
+                      {level.label}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={onAddSkill}
@@ -711,15 +770,22 @@ function AddOfferModal({ onClose, onSubmit, newOffer, onChange, onAddSkill, onRe
                 <div className="mt-3 flex flex-wrap gap-2">
                   {newOffer.skills.map((skill) => (
                     <span
-                      key={`skill-${skill}`}
-                      className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                      key={`skill-${skill.name}-${skill.importance}`}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
+                        skill.importance === "Importante"
+                          ? "border-primary/60 bg-primary/10 text-primary"
+                          : "border-border/60 bg-secondary/60 text-muted-foreground"
+                      }`}
                     >
-                      {skill}
+                      {skill.name}
+                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {skill.importance}
+                      </span>
                       <button
                         type="button"
                         onClick={() => onRemoveSkill(skill)}
-                        className="rounded-full bg-white/60 p-1 text-primary transition hover:bg-white"
-                        aria-label={`Retirer ${skill}`}
+                        className="rounded-full bg-white/90 p-1 text-muted-foreground transition hover:bg-white hover:text-primary"
+                        aria-label={`Retirer ${skill.name}`}
                       >
                         <X size={12} />
                       </button>
@@ -728,7 +794,7 @@ function AddOfferModal({ onClose, onSubmit, newOffer, onChange, onAddSkill, onRe
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Ajoutez chaque compétence individuellement grâce au bouton +. Appuyez sur Entrée pour gagner du temps.</p>
+            <p className="text-xs text-muted-foreground">Déclarez chaque compétence avec son niveau d'importance. Celles marquées « Importante » sont bloquantes pour la suite du processus.</p>
           </div>
 
           <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
