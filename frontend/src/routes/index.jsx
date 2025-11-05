@@ -13,6 +13,9 @@ const RecommendationsPage = lazy(() => import('../pages/Recruiter/Recommendation
 const NotFoundPage = lazy(() => import('../pages/NotFound'))
 const SignupPage = lazy(() => import('../pages/Auth/Signup'))
 const CreateCandidateProfilePage = lazy(() => import('../pages/Candidat/CreateProfile'))
+const LoginPage = lazy(() => import('../pages/Auth/Login'))
+const EspaceCandidatPage = lazy(() => import('../pages/Candidat/Espace'))
+const CandidateProfileReadOnlyPage = lazy(() => import('../pages/Candidat/Profile'))
 
 export default function AppRoutes() {
   return (
@@ -26,7 +29,10 @@ export default function AppRoutes() {
               <Route path="/jobs" element={<JobsPage />} />
               <Route path="/jobs/:id" element={<JobDetailsPage />} />
               <Route path="/signup" element={<SignupPage />} />
+            <Route path="/login" element={<LoginPage />} />
               <Route path="/candidat/creer-profil" element={<CreateCandidateProfilePage />} />
+            <Route path="/candidat/profil" element={<CandidateProfileReadOnlyPage />} />
+            <Route path="/candidat/espace" element={<EspaceCandidatPage />} />
               <Route path="/recruiter" element={<RecruiterPage />} />
               <Route path="/mes-offres" element={<MyOffersPage />} />
               <Route path="/recommandations" element={<RecommendationsPage />} />

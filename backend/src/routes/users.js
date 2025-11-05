@@ -2,12 +2,13 @@ const express = require('express')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
-const { createUser, updateUserProfile, attachUserFiles } = require('../controllers/usersController')
+const { createUser, updateUserProfile, attachUserFiles, getUser } = require('../controllers/usersController')
 
 const router = express.Router()
 
 router.post('/', createUser)
 router.put('/:id', updateUserProfile)
+router.get('/:id', getUser)
 
 // Multer storage configured per user id param
 const storage = multer.diskStorage({

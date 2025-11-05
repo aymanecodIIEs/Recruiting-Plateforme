@@ -122,6 +122,20 @@ async function attachUserFiles(req, res, next) {
 }
 
 module.exports = { createUser, updateUserProfile, attachUserFiles }
+async function getUser(req, res, next) {
+  try {
+    const { id } = req.params
+    const user = await User.findById(id).lean()
+    if (!user) return res.status(404).json({ error: 'user not found' })
+    // Do not expose password hash
+    delete user.passwordHash
+    return res.json(user)
+  } catch (err) {
+    return next(err)
+  }
+}
+
+module.exports = { createUser, updateUserProfile, attachUserFiles, getUser }
 
 function toUploadsRelativePath(absPath) {
   try {

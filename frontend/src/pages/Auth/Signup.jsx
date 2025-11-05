@@ -1,11 +1,13 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { API_BASE_URL } from "../../utils/config"
+import { useAuth } from "../../context/useAuth"
 import { Mail, Lock, Eye, EyeOff, Zap, CheckCircle, Sparkles, FileUp } from "lucide-react"
 import successPoolLogo from "../../assets/success-pool-logo.svg"
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -133,6 +135,9 @@ export default function SignupPage() {
       }
       const created = await createRes.json()
       const userId = created?.id
+      if (userId) {
+        login({ id: userId, email: formData.email })
+      }
 
       // Upload initial CV immediately so it's persisted as first CV
       if (userId && formData.cv) {
@@ -146,7 +151,7 @@ export default function SignupPage() {
 
       setIsLoading(false)
       setProcessingMessage("")
-      navigate('/candidat/creer-profil', { replace: true, state: { parsed: data?.parsed || null, userId } })
+      navigate('/candidat/espace', { replace: true })
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('CV extract failed:', err)

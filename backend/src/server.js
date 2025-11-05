@@ -6,6 +6,7 @@ const ENV = require('./config/env')
 const { errorHandler } = require('./middlewares/errorHandler')
 const cvRoutes = require('./routes/cv')
 const usersRoutes = require('./routes/users')
+const authRoutes = require('./routes/auth')
 const mongoose = require('mongoose')
 const path = require('path')
 const net = require('net')
@@ -24,6 +25,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/cv', cvRoutes)
 app.use('/api/users', usersRoutes)
+app.use('/api/auth', authRoutes)
 
 app.use(errorHandler)
 
