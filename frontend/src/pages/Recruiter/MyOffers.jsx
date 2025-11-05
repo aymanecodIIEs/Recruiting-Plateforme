@@ -176,7 +176,13 @@ export default function MyOffers() {
   const { user } = useAuth()
   const isRecruiter = user?.role === "recruiter"
   const isSubscribed = user?.isSubscribed ?? false
-  const recruiterCompany = user?.company ?? "Société Générale"
+  const recruiterCompanyName = (() => {
+    const company = user?.company
+    if (!company) return "Société Générale"
+    if (typeof company === "string") return company
+    if (typeof company === "object") return company.name || "Société Générale"
+    return "Société Générale"
+  })()
 
   const [offers, setOffers] = useState(INITIAL_OFFERS)
   const [selectedStatus, setSelectedStatus] = useState("Toutes")
@@ -185,7 +191,7 @@ export default function MyOffers() {
   const [candidateActionMessage, setCandidateActionMessage] = useState(null)
   const [newOffer, setNewOffer] = useState({
     title: "",
-    department: `${recruiterCompany} · Département`,
+    department: `${recruiterCompanyName} · Département`,
     status: "Disponible",
     location: "",
     contractType: "",
@@ -228,7 +234,7 @@ export default function MyOffers() {
   const resetForm = () => {
     setNewOffer({
       title: "",
-      department: `${recruiterCompany} · Département`,
+      department: `${recruiterCompanyName} · Département`,
       status: "Disponible",
       location: "",
       contractType: "",
@@ -374,7 +380,7 @@ export default function MyOffers() {
     const offerToAdd = {
       id: `offer-${Date.now()}`,
       title: newOffer.title || "Nouvelle opportunité",
-      department: newOffer.department || `${recruiterCompany} · Département`,
+      department: newOffer.department || `${recruiterCompanyName} · Département`,
       status: newOffer.status,
       publishedAt: "Brouillon",
       location: newOffer.location || "À préciser",
@@ -431,8 +437,8 @@ export default function MyOffers() {
               Portefeuille Success Pool
             </span>
             <h1 className="text-3xl font-semibold text-foreground md:text-4xl">Mes offres</h1>
-            <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
-              Pilotage des recrutements {recruiterCompany}. Retrouvez vos offres actives, l'avancée des candidats et ajoutez de nouvelles opportunités en un clic.
+              <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
+              Pilotage des recrutements {recruiterCompanyName}. Retrouvez vos offres actives, l'avancée des candidats et ajoutez de nouvelles opportunités en un clic.
             </p>
           </div>
 
@@ -440,7 +446,7 @@ export default function MyOffers() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  {user.fullName} · {recruiterCompany}
+                  {user.fullName} · {recruiterCompanyName}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isSubscribed

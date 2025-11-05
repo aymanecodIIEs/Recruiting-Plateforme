@@ -112,7 +112,13 @@ export default function RecruiterRecommendations() {
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [selectedEntry, setSelectedEntry] = useState(null)
 
-  const myCompany = user?.company?.toLowerCase() ?? null
+  const myCompany = (() => {
+    const c = user?.company
+    if (!c) return null
+    if (typeof c === 'string') return c.toLowerCase()
+    if (typeof c === 'object') return (c.name || '').toLowerCase() || null
+    return null
+  })()
   const canFilterMine = Boolean(myCompany)
 
   useEffect(() => {
