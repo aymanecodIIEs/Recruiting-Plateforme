@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useLocation } from "react-router-dom"
+import { API_BASE_URL } from "../../../utils/config"
 import { Plus, Trash2, Building2, User, Github, Linkedin, FileText } from "lucide-react"
 import { civilityOptions, initialProfileState } from "./data"
 
@@ -132,11 +133,42 @@ export default function CreateCandidateProfilePage() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // eslint-disable-next-line no-console
-    console.log("Profil complété:", profile)
-    alert("Profil sauvegardé avec succès!")
+    const userId = location?.state?.userId
+    const hasFiles = Array.isArray(profile.documents) && profile.documents.some((d) => d.file)
+    try {
+      // Update profile structure in DB
+      await fetch(`${API_BASE_URL.replace(/\/$/, '')}/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile }),
+      })
+
+      if (hasFiles) {
+        const fd = new FormData()
+        const cvDoc = profile.documents.find((d) => d.name?.toLowerCase().includes('cv') && d.file)
+        if (cvDoc?.file) {
+          fd.append('cv', cvDoc.file, cvDoc.file.name)
+          fd.append('cvName', cvDoc.name || 'CV')
+        }
+
+        const otherDocs = profile.documents.filter((d) => d.file && d !== cvDoc)
+        otherDocs.forEach((d) => fd.append('documents', d.file, d.file.name))
+        otherDocs.forEach((d) => fd.append('documentNames', d.name || d.file.name))
+
+        await fetch(`${API_BASE_URL.replace(/\/$/, '')}/users/${userId}/files`, {
+          method: 'POST',
+          body: fd,
+        })
+      }
+
+      alert('Profil sauvegardé avec succès!')
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Save profile failed:', err)
+      alert('Erreur lors de la sauvegarde du profil')
+    }
   }
 
   return (

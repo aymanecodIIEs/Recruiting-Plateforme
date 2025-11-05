@@ -1,0 +1,12 @@
+db.users.find()
+db.users.deleteMany({})
+db.users.find()
+db.users.deleteMany({})
+db.users.find()
+db.users.deleteMany({})
+use recruiting
+db.users.find()
+show collections
+use recruiting
+show databases
+show collectionsshow collections
