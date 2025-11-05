@@ -7,6 +7,8 @@ import { civilityOptions, initialProfileState } from "./data"
 export default function CreateCandidateProfilePage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const emailFromSignup = location?.state?.email || null
+  const passwordFromSignup = location?.state?.password || null
   const [profile, setProfile] = useState(initialProfileState)
   const [errors, setErrors] = useState({})
 
@@ -174,9 +176,26 @@ export default function CreateCandidateProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const userId = location?.state?.userId
+    let userId = location?.state?.userId
     const hasFiles = Array.isArray(profile.documents) && profile.documents.some((d) => d.file)
     try {
+      // If user isn't created yet, create with provided email/password
+      if (!userId && emailFromSignup && passwordFromSignup) {
+        const createRes = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailFromSignup, password: passwordFromSignup, parsed: null }),
+        })
+        if (!createRes.ok) {
+          const errText = await createRes.text()
+          throw new Error(errText || `HTTP ${createRes.status}`)
+        }
+        const created = await createRes.json()
+        userId = created?.id
+      }
+
+      if (!userId) throw new Error('Aucun identifiant utilisateur disponible')
+
       // Update profile structure in DB
       await fetch(`${API_BASE_URL.replace(/\/$/, '')}/users/${userId}`, {
         method: 'PUT',
@@ -203,6 +222,7 @@ export default function CreateCandidateProfilePage() {
       }
 
       alert('Profil sauvegardé avec succès!')
+      navigate('/candidat/espace', { replace: true })
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Save profile failed:', err)

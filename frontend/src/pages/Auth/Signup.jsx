@@ -123,35 +123,17 @@ export default function SignupPage() {
       // eslint-disable-next-line no-console
       console.log('CV extract response:', data)
 
-      // Create user immediately with parsed + credentials
-      const createRes = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, password: formData.password, parsed: data?.parsed || null }),
-      })
-      if (!createRes.ok) {
-        const errText = await createRes.text()
-        throw new Error(errText || `HTTP ${createRes.status}`)
-      }
-      const created = await createRes.json()
-      const userId = created?.id
-      if (userId) {
-        login({ id: userId, email: formData.email })
-      }
-
-      // Upload initial CV immediately so it's persisted as first CV
-      if (userId && formData.cv) {
-        const filesFd = new FormData()
-        filesFd.append('cv', formData.cv, formData.cv.name)
-        filesFd.append('cvName', 'CV initial')
-        try {
-          await fetch(`${API_BASE_URL.replace(/\/$/, '')}/users/${userId}/files`, { method: 'POST', body: filesFd })
-        } catch (_e) {}
-      }
-
+      // Do NOT create user yet: let the candidate review/edit parsed data first
       setIsLoading(false)
       setProcessingMessage("")
-      navigate('/candidat/espace', { replace: true })
+      navigate('/candidat/creer-profil', {
+        replace: true,
+        state: {
+          parsed: data?.parsed || null,
+          email: formData.email,
+          password: formData.password,
+        },
+      })
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('CV extract failed:', err)
