@@ -1,28 +1,55 @@
-"use client"
-
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { Plus, Trash2, Building2, User, Github, Linkedin, FileText } from "lucide-react"
+import { civilityOptions, initialProfileState } from "./data"
 
-export default function CompleteProfilePage() {
-  const [profile, setProfile] = useState({
-    // Informations générales
-    civility: "",
-    firstName: "",
-    lastName: "",
-    city: "",
-    postalCode: "",
-    phone: "",
-    // Liens
-    github: "",
-    linkedin: "",
-    otherLinks: [{ name: "", url: "" }],
-    // Projets professionnels
-    projects: [{ name: "", level: "", organization: "", date: "", description: "", skills: "" }],
-    // Documents
-    documents: [{ name: "", file: null }],
-  })
-
+export default function CreateCandidateProfilePage() {
+  const location = useLocation()
+  const [profile, setProfile] = useState(initialProfileState)
   const [errors, setErrors] = useState({})
+
+  const normalizedFromParsed = useMemo(() => {
+    const parsed = location?.state?.parsed
+    if (!parsed) return null
+    try {
+      const civilityRaw = (parsed.civilite || '').toLowerCase()
+      const civility = civilityRaw.includes('monsieur') ? 'mr' : civilityRaw.includes('madame') ? 'mrs' : 'other'
+      const otherLinks = Array.isArray(parsed?.liens?.autres)
+        ? parsed.liens.autres.filter(Boolean).map((url) => ({ name: '', url }))
+        : []
+      const projects = Array.isArray(parsed?.projets_professionnels)
+        ? parsed.projets_professionnels.map((p) => ({
+            name: p?.nom || '',
+            level: p?.niveau || '',
+            organization: p?.organisme || '',
+            date: p?.date || '',
+            description: p?.description || '',
+            skills: Array.isArray(p?.competences) ? p.competences.filter(Boolean).join(', ') : (p?.competences || ''),
+          }))
+        : []
+      return {
+        civility,
+        firstName: parsed?.prenom || '',
+        lastName: parsed?.nom || '',
+        city: parsed?.ville || '',
+        postalCode: parsed?.code_postal || '',
+        phone: parsed?.telephone || '',
+        github: parsed?.liens?.github || '',
+        linkedin: parsed?.liens?.linkedin || '',
+        otherLinks: otherLinks.length ? otherLinks : initialProfileState.otherLinks,
+        projects: projects.length ? projects : initialProfileState.projects,
+        documents: initialProfileState.documents,
+      }
+    } catch (_e) {
+      return null
+    }
+  }, [location?.state?.parsed])
+
+  useEffect(() => {
+    if (normalizedFromParsed) {
+      setProfile((prev) => ({ ...prev, ...normalizedFromParsed }))
+    }
+  }, [normalizedFromParsed])
 
   const handleGeneralChange = (e) => {
     const { name, value } = e.target
@@ -107,6 +134,7 @@ export default function CompleteProfilePage() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    // eslint-disable-next-line no-console
     console.log("Profil complété:", profile)
     alert("Profil sauvegardé avec succès!")
   }
@@ -114,7 +142,6 @@ export default function CompleteProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent mb-2">
             Complétez votre profil
@@ -123,7 +150,6 @@ export default function CompleteProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Informations générales */}
           <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
@@ -133,7 +159,6 @@ export default function CompleteProfilePage() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Civilité */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Civilité</label>
                 <select
@@ -142,14 +167,14 @@ export default function CompleteProfilePage() {
                   onChange={handleGeneralChange}
                   className="w-full px-4 py-3 bg-secondary/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                 >
-                  <option value="">Sélectionner</option>
-                  <option value="mr">Monsieur</option>
-                  <option value="mrs">Madame</option>
-                  <option value="other">Non précisé</option>
+                  {civilityOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Prénom */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Prénom</label>
                 <input
@@ -162,7 +187,6 @@ export default function CompleteProfilePage() {
                 />
               </div>
 
-              {/* Nom */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Nom</label>
                 <input
@@ -175,7 +199,6 @@ export default function CompleteProfilePage() {
                 />
               </div>
 
-              {/* Ville */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Ville</label>
                 <input
@@ -188,7 +211,6 @@ export default function CompleteProfilePage() {
                 />
               </div>
 
-              {/* Code postal */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Code postal</label>
                 <input
@@ -201,7 +223,6 @@ export default function CompleteProfilePage() {
                 />
               </div>
 
-              {/* Téléphone */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Téléphone</label>
                 <input
@@ -216,7 +237,6 @@ export default function CompleteProfilePage() {
             </div>
           </div>
 
-          {/* Liens */}
           <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-accent/20 to-accent/5 rounded-lg flex items-center justify-center">
@@ -226,7 +246,6 @@ export default function CompleteProfilePage() {
             </h2>
 
             <div className="space-y-4">
-              {/* GitHub */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                   <Github size={16} />
@@ -242,7 +261,6 @@ export default function CompleteProfilePage() {
                 />
               </div>
 
-              {/* LinkedIn */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                   <Linkedin size={16} />
@@ -258,7 +276,6 @@ export default function CompleteProfilePage() {
                 />
               </div>
 
-              {/* Autres liens */}
               <div className="border-t border-border/30 pt-4">
                 <h3 className="font-semibold text-foreground mb-4">Autres liens</h3>
                 {profile.otherLinks.map((link, index) => (
@@ -298,7 +315,6 @@ export default function CompleteProfilePage() {
             </div>
           </div>
 
-          {/* Projets professionnels */}
           <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
@@ -378,7 +394,6 @@ export default function CompleteProfilePage() {
             </div>
           </div>
 
-          {/* Documents */}
           <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-accent/20 to-accent/5 rounded-lg flex items-center justify-center">
@@ -429,7 +444,6 @@ export default function CompleteProfilePage() {
             </div>
           </div>
 
-          {/* Submit */}
           <div className="flex gap-4">
             <button
               type="submit"
@@ -449,3 +463,5 @@ export default function CompleteProfilePage() {
     </div>
   )
 }
+
+

@@ -10,6 +10,8 @@ const AboutPage = lazy(() => import('../pages/About'))
 const RecruiterPage = lazy(() => import('../pages/Recruiter'))
 const MyOffersPage = lazy(() => import('../pages/Recruiter/MyOffers'))
 const NotFoundPage = lazy(() => import('../pages/NotFound'))
+const SignupPage = lazy(() => import('../pages/Auth/Signup'))
+const CreateCandidateProfilePage = lazy(() => import('../pages/Candidat/CreateProfile'))
 
 export default function AppRoutes() {
   return (
@@ -22,6 +24,8 @@ export default function AppRoutes() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/jobs" element={<JobsPage />} />
               <Route path="/jobs/:id" element={<JobDetailsPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/candidat/creer-profil" element={<CreateCandidateProfilePage />} />
               <Route path="/recruiter" element={<RecruiterPage />} />
               <Route path="/mes-offres" element={<MyOffersPage />} />
               <Route path="/404" element={<NotFoundPage />} />
