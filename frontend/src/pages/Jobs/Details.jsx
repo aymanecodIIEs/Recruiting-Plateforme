@@ -8,17 +8,101 @@ import { API_BASE_URL } from '../../utils/config'
 export default function JobDetailsPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const jobId = Number(id)
-  const job = useMemo(() => {
-    if (Number.isFinite(jobId)) {
-      return JOBS.find((j) => j.id === jobId) || JOBS[0]
-    }
+  const [job, setJob] = useState(() => {
+    const numericId = Number(id)
+    if (Number.isFinite(numericId)) return JOBS.find((j) => j.id === numericId) || JOBS[0]
     return JOBS[0]
-  }, [jobId])
+  })
+  const [loading, setLoading] = useState(false)
   const [showApplyModal, setShowApplyModal] = useState(false)
   const { user } = useAuth()
 
   // Always have a job from static data for testing
+
+  useEffect(() => {
+    let cancelled = false
+
+    const mapOfferToJob = (offer) => {
+      const companyName = offer?.company?.name || offer?.companyName || job.company || 'Entreprise'
+      const skills = Array.isArray(offer?.skills) ? offer.skills : []
+      const keywords = Array.isArray(offer?.keywords) ? offer.keywords : []
+
+      const idealProfile = skills.map((s) =>
+        s?.name ? `${s.name}${s.importance && s.importance !== 'Importante' ? ` (${s.importance})` : ''}` : null
+      ).filter(Boolean)
+
+      const missions = offer?.mission
+        ? offer.mission.split(/\n|\r|\.\s+/).map((m) => m.trim()).filter((m) => m.length > 0)
+        : []
+
+      const descriptionBase = offer?.mission || job.description || ''
+      const descriptionWithKeywords = keywords.length
+        ? `${descriptionBase}\n\nMots-clés: ${keywords.join(', ')}`
+        : descriptionBase
+
+      const companyInfo = {
+        name: companyName,
+        description: offer?.company?.description || job.companyInfo?.description || undefined,
+        imageUrl: offer?.company?.imageUrl || job.companyInfo?.imageUrl || undefined,
+        sector: job.companyInfo?.sector || undefined,
+        employees: job.companyInfo?.employees || undefined,
+        founded: job.companyInfo?.founded || undefined,
+        culture: job.companyInfo?.culture || undefined,
+        email: offer?.company?.email || job.companyInfo?.email || undefined,
+        phone: job.companyInfo?.phone || undefined,
+        website: job.companyInfo?.website || undefined,
+      }
+
+      return {
+        // preserve original fields when missing from backend
+        ...job,
+        id: offer?.id || offer?._id || id,
+        title: offer?.title || job.title,
+        company: companyName,
+        location: offer?.location || job.location,
+        type: offer?.contractType || job.type,
+        salary: offer?.salary || job.salary,
+        tags: [],
+        description: descriptionWithKeywords,
+        missions: missions.length ? missions : job.missions,
+        idealProfile: idealProfile.length ? idealProfile : job.idealProfile,
+        companyInfo,
+        companyLogoUrl: offer?.company?.imageUrl || job.companyLogoUrl || undefined,
+        benefits: Array.isArray(job.benefits) ? job.benefits : [],
+        additionalInfo: job.additionalInfo || undefined,
+      }
+    }
+
+    const fetchOffer = async () => {
+      // If id looks like a Mongo id, fetch; otherwise keep static
+      const looksLikeMongoId = typeof id === 'string' && /^[a-f\d]{24}$/i.test(id)
+      if (!looksLikeMongoId) return
+      setLoading(true)
+      try {
+        const endpoint = `${API_BASE_URL.replace(/\/$/, '')}/offers/${id}`
+        const res = await fetch(endpoint)
+        if (!res.ok) throw new Error('Failed to load offer')
+        const offer = await res.json()
+        if (!cancelled && offer) {
+          setJob(mapOfferToJob(offer))
+        }
+      } catch (_e) {
+        // Silent fallback to static
+        if (!cancelled) {
+          const numericId = Number(id)
+          const fallback = Number.isFinite(numericId) ? (JOBS.find((j) => j.id === numericId) || JOBS[0]) : JOBS[0]
+          setJob(fallback)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchOffer()
+    return () => {
+      cancelled = true
+    }
+  }, [id])
 
   return (
     <main className="min-h-screen bg-background">
@@ -38,8 +122,12 @@ export default function JobDetailsPage() {
           <div className="md:col-span-2">
             <div className="border border-border bg-card rounded-lg p-6">
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-16 h-16 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-lg">
-                  {job.logo}
+                <div className="w-16 h-16 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-lg overflow-hidden">
+                  {job.companyLogoUrl ? (
+                    <img src={job.companyLogoUrl} alt={job.company || 'Entreprise'} className="w-full h-full object-cover" />
+                  ) : (
+                    job.logo
+                  )}
                 </div>
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-foreground mb-1">{job.title}</h2>
@@ -62,13 +150,7 @@ export default function JobDetailsPage() {
                 </div>
               </div>
 
-              {Array.isArray(job.tags) && job.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {job.tags.map((tag, idx) => (
-                    <span key={idx} className="text-xs px-3 py-1 bg-border text-foreground rounded">{tag}</span>
-                  ))}
-                </div>
-              )}
+              {/* Keywords moved into description; chips removed */}
 
               {job.description && (
                 <section className="mb-6">
