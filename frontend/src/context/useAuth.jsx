@@ -1,6 +1,15 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-const AuthContext = createContext({ user: null, login: () => {}, logout: () => {}, savedJobs: [], applications: [], toggleSavedJob: () => {}, addApplication: () => {} })
+const AuthContext = createContext({
+  user: null,
+  login: () => {},
+  logout: () => {},
+  savedJobs: [],
+  applications: [],
+  toggleSavedJob: () => {},
+  addApplication: () => {},
+  updateApplicationStatus: () => {},
+})
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -22,16 +31,16 @@ export function AuthProvider({ children }) {
     readStorageJson('sp.auth.applications', setApplications)
   }, [])
 
-  const login = (u) => {
+  const login = useCallback((u) => {
     setUser(u)
     try {
       localStorage.setItem('sp.auth.user', JSON.stringify(u))
     } catch (error) {
       console.warn('Failed to persist auth user', error)
     }
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null)
     setSavedJobs([])
     setApplications([])
@@ -42,9 +51,9 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.warn('Failed to clear auth storage', error)
     }
-  }
+  }, [])
 
-  const toggleSavedJob = (job) => {
+  const toggleSavedJob = useCallback((job) => {
     setSavedJobs((prev) => {
       const exists = prev.some((j) => j.id === job.id)
       const next = exists ? prev.filter((j) => j.id !== job.id) : [...prev, job]
@@ -55,11 +64,16 @@ export function AuthProvider({ children }) {
       }
       return next
     })
-  }
+  }, [])
 
-  const addApplication = (application) => {
+  const addApplication = useCallback((application) => {
     setApplications((prev) => {
-      const next = [application, ...prev.filter((app) => app.jobId !== application.jobId)]
+      const compatibilityScore =
+        typeof application.compatibilityScore === 'number'
+          ? application.compatibilityScore
+          : Math.floor(Math.random() * 26) + 70
+      const withMeta = { ...application, compatibilityScore }
+      const next = [withMeta, ...prev.filter((app) => app.jobId !== application.jobId)]
       try {
         localStorage.setItem('sp.auth.applications', JSON.stringify(next))
       } catch (error) {
@@ -67,9 +81,24 @@ export function AuthProvider({ children }) {
       }
       return next
     })
-  }
+  }, [])
 
-  const value = useMemo(() => ({ user, login, logout, savedJobs, toggleSavedJob, applications, addApplication }), [user, savedJobs, applications])
+  const updateApplicationStatus = useCallback((jobId, status, extra = {}) => {
+    setApplications((prev) => {
+      const next = prev.map((app) => (app.jobId === jobId ? { ...app, status, ...extra } : app))
+      try {
+        localStorage.setItem('sp.auth.applications', JSON.stringify(next))
+      } catch (error) {
+        console.warn('Failed to persist applications', error)
+      }
+      return next
+    })
+  }, [])
+
+  const value = useMemo(
+    () => ({ user, login, logout, savedJobs, toggleSavedJob, applications, addApplication, updateApplicationStatus }),
+    [user, login, logout, savedJobs, toggleSavedJob, applications, addApplication, updateApplicationStatus]
+  )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
