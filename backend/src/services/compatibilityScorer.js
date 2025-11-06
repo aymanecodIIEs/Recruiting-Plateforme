@@ -86,3 +86,5 @@ async function scoreCvAgainstOffer(cv, offer) {
 module.exports = { scoreCvAgainstOffer }
 
 
+
+
