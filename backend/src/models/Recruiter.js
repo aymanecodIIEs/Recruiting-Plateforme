@@ -15,3 +15,4 @@ const RecruiterSchema = new mongoose.Schema(
 module.exports = mongoose.model('Recruiter', RecruiterSchema)
 
 
+
