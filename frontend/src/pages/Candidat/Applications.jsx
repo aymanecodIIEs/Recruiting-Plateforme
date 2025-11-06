@@ -50,6 +50,20 @@ export default function MyApplicationsPage() {
     return () => { cancelled = true }
   }, [user?.id])
 
+  const handleDelete = async (id) => {
+    if (!id) return
+    const confirm = window.confirm('Supprimer cette candidature ?')
+    if (!confirm) return
+    try {
+      const endpoint = `${API_BASE_URL.replace(/\/$/, '')}/applications/${encodeURIComponent(id)}`
+      const res = await fetch(endpoint, { method: 'DELETE' })
+      if (!res.ok) throw new Error('delete_failed')
+      setApps((prev) => prev.filter((a) => (a.id || a._id) !== id))
+    } catch (_e) {
+      // no-op UI error for now
+    }
+  }
+
   const filteredApps = useMemo(() => {
     const filtered = apps.filter((a) => {
       const title = (a.jobTitle || a.offerMeta?.title || '').toLowerCase()
@@ -168,14 +182,17 @@ export default function MyApplicationsPage() {
           ) : filteredApps.length > 0 ? (
             <div className="grid gap-4">
               {filteredApps.map((a) => {
+                const appId = a.id || a._id
                 const title = a.jobTitle || a.offerMeta?.title || 'Offre'
                 const companyName = a.companyName || a.offerMeta?.company?.name || ''
                 const logo = a.offerMeta?.company?.imageUrl || ''
                 const appliedAt = a.createdAt ? new Date(a.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
                 const statusCls = STATUS_CLASSES[a.status] || 'bg-slate-100 text-slate-700 border-slate-200'
                 const link = a.offerMeta?.id ? `/jobs/${a.offerMeta.id}` : null
+                const score = typeof a.compatibilityScore === 'number' ? a.compatibilityScore : null
+                const reason = a.rejectionReason || null
                 return (
-                  <div key={a.id} className="group bg-card border border-border rounded-xl p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 flex flex-col lg:flex-row lg:items-center gap-6">
+                  <div key={appId} className="group bg-card border border-border rounded-xl p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 flex flex-col lg:flex-row lg:items-center gap-6">
                     <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center font-bold text-2xl text-primary-foreground flex-shrink-0 group-hover:shadow-lg overflow-hidden">
                       {logo ? <img src={logo} alt={companyName || 'Entreprise'} className="w-full h-full object-cover" /> : (companyName?.[0] || 'E')}
                     </div>
@@ -193,6 +210,18 @@ export default function MyApplicationsPage() {
                             Candidaté le {appliedAt}
                           </span>
                         )}
+                        {score != null && (
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-1 h-1 bg-primary rounded-full"></span>
+                            Score: {score}%
+                          </span>
+                        )}
+                        {a.status === 'rejete' && reason && (
+                          <span className="flex items-center gap-1.5 text-red-600">
+                            <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                            Raison: {reason}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 w-full lg:w-auto">
@@ -200,13 +229,18 @@ export default function MyApplicationsPage() {
                         {getStatusIcon(a.status)}
                         {STATUS_LABELS[a.status] || a.status}
                       </div>
-                      {link && (
-                        <Link to={link} className="w-full lg:w-auto">
-                          <button className="w-full lg:w-auto px-5 py-2.5 border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                            Voir l'offre
-                          </button>
-                        </Link>
-                      )}
+                      <div className="flex gap-2 w-full lg:w-auto">
+                        {link && (
+                          <Link to={link} className="flex-1 lg:flex-none">
+                            <button className="w-full px-5 py-2.5 border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+                              Voir l'offre
+                            </button>
+                          </Link>
+                        )}
+                        <button onClick={() => handleDelete(appId)} className="w-full lg:w-auto px-5 py-2.5 border-2 border-red-500 text-red-600 font-semibold rounded-lg hover:bg-red-500 hover:text-white transition-all duration-300">
+                          Supprimer
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )

@@ -24,8 +24,14 @@ const ApplicationSchema = new mongoose.Schema(
       enum: ['soumis', 'cv_traite', 'rejete', 'accepte', 'preselectionne', 'en_attente_interview'],
       default: 'soumis',
     },
+    compatibilityScore: { type: Number },
+    rejectionReason: { type: String },
     cv: StoredFileSchema,
     documents: [StoredFileSchema],
+    analysis: {
+      preview: { type: String },
+      parsed: { type: mongoose.Schema.Types.Mixed },
+    },
   },
   { timestamps: true }
 )

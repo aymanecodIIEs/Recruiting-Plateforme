@@ -391,13 +391,28 @@ function ApplyModal({ job, user, onClose }) {
         throw new Error(detail || 'Échec de la candidature')
       }
 
-      await res.json()
-      setStatus({ type: 'success', text: 'Candidature envoyée avec succès !' })
+      const data = await res.json()
+      const parsed = data?.analysis?.parsed || null
+      const offer = data?.offer || null
+      const compatibilityScore = typeof data?.compatibilityScore === 'number'
+        ? data.compatibilityScore
+        : (typeof data?.analysis?.compatibility?.score_percent === 'number' ? data.analysis.compatibility.score_percent : null)
+      console.log('CV parsed & offer & score', { parsed, offer, compatibilityScore })
+      if (!parsed) {
+        console.warn('Aucune analyse renvoyée. Vérifiez que le CV est un PDF et les logs backend.')
+      }
+      if (compatibilityScore != null) {
+        setStatus({ type: 'success', text: `Candidature envoyée. Score de compatibilité: ${compatibilityScore}%` })
+      } else {
+        setStatus({ type: 'success', text: 'Candidature envoyée avec succès !' })
+      }
       setCvFile(null)
       setDocuments([])
       setForm((prev) => ({ ...prev, message: '' }))
-      // Redirect to applications page after success
-      try { window.location.assign('/applications') } catch {}
+      // Redirect to applications page after a short delay to ensure logs are flushed
+      setTimeout(() => {
+        try { window.location.assign('/applications') } catch {}
+      }, 600)
     } catch (error) {
       console.error('Failed to submit application', error)
       setStatus({ type: 'error', text: error?.message || "Une erreur est survenue lors de l'envoi." })
