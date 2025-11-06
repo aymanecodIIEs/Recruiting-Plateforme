@@ -32,6 +32,11 @@ const ApplicationSchema = new mongoose.Schema(
       preview: { type: String },
       parsed: { type: mongoose.Schema.Types.Mixed },
     },
+    interviewPlan: {
+      total_minutes: { type: Number },
+      questions: { type: [mongoose.Schema.Types.Mixed] },
+      notes: { type: String },
+    },
   },
   { timestamps: true }
 )

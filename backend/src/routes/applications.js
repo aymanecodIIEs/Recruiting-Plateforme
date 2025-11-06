@@ -67,14 +67,14 @@ router.post(
         if (existing) return res.status(409).json({ error: 'already_applied' })
       }
 
-      // Create base application (without file paths first)
+      // Create base application (without file paths first) and mark en_attente_interview immediately
       const appDoc = await Application.create({
         offer: offerId || undefined,
         jobTitle: jobTitle || undefined,
         companyName: company || undefined,
         candidateId: candidateId || undefined,
         message: message || undefined,
-        status: 'soumis',
+        status: 'en_attente_interview',
         cv: undefined,
         documents: [],
       })
@@ -113,110 +113,83 @@ router.post(
         offerSummary = offer || null
       }
 
-      // Analyze CV like cvParser: extract text from PDF then parse via Gemini
-      let analysis = null
-      if (cvStored && cvStored.path && cvFile?.mimetype === 'application/pdf') {
-        try {
-          const absPath = path.join(process.cwd(), cvStored.path.replace(/^\//, ''))
-          console.log('[applications] CV analysis starting for', { absPath, mimetype: cvFile.mimetype })
-          const fsLocal = require('fs')
-          const exists = fsLocal.existsSync(absPath)
-          if (!exists) {
-            console.warn('[applications] CV file not found at', absPath)
-          }
-          const buf = fsLocal.readFileSync(absPath)
-          // Create a plain Uint8Array (not Buffer subclass)
-          const data = Uint8Array.from(buf)
-          console.log('[applications] CV file bytes read:', data?.length, '| isUint8Array:', data instanceof Uint8Array, '| isBuffer:', Buffer.isBuffer(buf))
-          // Use same build as CV extract controller
-          const pdfjsModule = await import('pdfjs-dist/build/pdf.mjs')
-          const pdfjsLib = pdfjsModule.default || pdfjsModule
-          const loadingTask = pdfjsLib.getDocument({ data })
-          const pdf = await loadingTask.promise
-          console.log('[applications] PDF loaded, pages =', pdf.numPages)
-          let fullText = ''
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum)
-            const textContent = await page.getTextContent()
-            const pageText = textContent.items.map((item) => item.str).join(' ')
-            fullText += `\n--- Page ${pageNum} ---\n` + pageText + '\n'
-          }
-          console.log('[applications] Extracted text length:', fullText.length)
-          const { extractCvData } = require('../services/cvParser')
-          let parsed = null
+      // Respond immediately with en_attente_interview so UI can show it, then process analysis async
+      const json = appDoc.toJSON()
+      const immediatePayload = { ...json, offer: offerId ? offerSummary : json.offer }
+      res.status(201).json(immediatePayload)
+
+      ;(async () => {
+        // Analyze CV like cvParser: extract text from PDF then parse via Gemini
+        let analysis = null
+        if (cvStored && cvStored.path && cvFile?.mimetype === 'application/pdf') {
           try {
-            parsed = await extractCvData(fullText)
-            console.log('[applications] Parsed CV keys:', parsed ? Object.keys(parsed) : null)
-          } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error('CV analysis failed:', e?.message || e)
-          }
-          // Run compatibility score using parsed CV (fallback to raw text) and full offer
-          let compatibility = null
-          let statusOverride = null
-          try {
-            if (offerSummary) {
-              const inputCv = parsed || fullText
-              compatibility = await scoreCvAgainstOffer(inputCv, offerSummary)
-              if (compatibility && typeof compatibility.score_percent === 'number') {
-                appDoc.compatibilityScore = compatibility.score_percent
-              }
-              if (compatibility && typeof compatibility.score_percent === 'number') {
-                if (compatibility.score_percent >= 50) {
-                  statusOverride = 'cv_traite'
-                } else {
-                  statusOverride = 'rejete'
-                  if (!compatibility.reason) compatibility.reason = 'not compatible'
-                  appDoc.rejectionReason = compatibility.reason
+            const absPath = path.join(process.cwd(), cvStored.path.replace(/^\//, ''))
+            console.log('[applications] (bg) CV analysis starting for', { absPath, mimetype: cvFile.mimetype })
+            const fsLocal = require('fs')
+            const buf = fsLocal.readFileSync(absPath)
+            const data = Uint8Array.from(buf)
+            const pdfjsModule = await import('pdfjs-dist/build/pdf.mjs')
+            const pdfjsLib = pdfjsModule.default || pdfjsModule
+            const loadingTask = pdfjsLib.getDocument({ data })
+            const pdf = await loadingTask.promise
+            let fullText = ''
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              const page = await pdf.getPage(pageNum)
+              const textContent = await page.getTextContent()
+              const pageText = textContent.items.map((item) => item.str).join(' ')
+              fullText += `\n--- Page ${pageNum} ---\n` + pageText + '\n'
+            }
+            const { extractCvData } = require('../services/cvParser')
+            let parsed = null
+            try {
+              parsed = await extractCvData(fullText)
+            } catch (_e) {}
+
+            let compatibility = null
+            let finalStatus = null
+            try {
+              if (offerSummary) {
+                const inputCv = parsed || fullText
+                compatibility = await scoreCvAgainstOffer(inputCv, offerSummary)
+                if (compatibility && typeof compatibility.score_percent === 'number') {
+                  appDoc.compatibilityScore = compatibility.score_percent
+                }
+                if (compatibility && typeof compatibility.score_percent === 'number') {
+                  if (compatibility.score_percent >= 50) {
+                    finalStatus = 'cv_traite'
+                  } else {
+                    finalStatus = 'rejete'
+                    if (!compatibility.reason) compatibility.reason = 'not compatible'
+                    appDoc.rejectionReason = compatibility.reason
+                  }
                 }
               }
+            } catch (_e) {}
+
+            // If passed, generate interview and attach
+            if (finalStatus === 'cv_traite') {
+              try {
+                const { generateInterviewPlan } = require('../services/interviewGenerator')
+                const plan = await generateInterviewPlan(parsed || fullText, offerSummary)
+                if (plan && Array.isArray(plan.questions)) {
+                  appDoc.interviewPlan = {
+                    total_minutes: plan.total_minutes || 10,
+                    questions: plan.questions,
+                    notes: plan.notes || '',
+                  }
+                }
+              } catch (_e) {}
             }
+
+            analysis = { preview: fullText.slice(0, 1200), parsed, compatibility }
+            if (finalStatus) appDoc.status = finalStatus
+            await appDoc.save()
+            console.log('[applications] (bg) updated application', { id: String(appDoc._id), status: appDoc.status, score: appDoc.compatibilityScore, hasInterview: !!appDoc.interviewPlan })
           } catch (e) {
-            console.warn('[applications] Compatibility scoring failed:', e?.message || e)
-          }
-          analysis = {
-            preview: fullText.slice(0, 1200),
-            parsed,
-            compatibility,
-          }
-          // Apply status based on compatibility if available
-          if (statusOverride) {
-            appDoc.status = statusOverride
-          }
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to analyze uploaded CV:', e?.message || e)
-        }
-      }
-
-      // Persist analysis on the candidature and update status to cv_traite
-      try {
-        if (analysis) appDoc.analysis = analysis
-        if (!appDoc.status || appDoc.status === 'soumis') {
-          appDoc.status = 'cv_traite'
-        }
-        await appDoc.save()
-      } catch (_e) {}
-
-      const json = appDoc.toJSON()
-      const payload = { ...json, offer: offerSummary || json.offer, analysis }
-      try {
-        console.log('[applications] Returning payload summary:', {
-          id: payload.id,
-          offerId: payload.offer ? (payload.offer._id || payload.offer.id || payload.offer) : null,
-          status: payload.status,
-          hasAnalysis: !!payload.analysis,
-        })
-        console.log('[applications] Offer info:', payload.offer)
-        if (payload.analysis) {
-          console.log('[applications] Analysis preview length:', payload.analysis.preview?.length || 0)
-          console.log('[applications] Analysis parsed keys:', payload.analysis.parsed ? Object.keys(payload.analysis.parsed) : null)
-          if (payload.analysis.compatibility) {
-            console.log('[applications] Compatibility score:', payload.analysis.compatibility.score_percent)
+            console.error('[applications] (bg) analysis failed:', e?.message || e)
           }
         }
-      } catch (_e) {}
-      return res.status(201).json(payload)
+      })()
     } catch (err) {
       return next(err)
     }
