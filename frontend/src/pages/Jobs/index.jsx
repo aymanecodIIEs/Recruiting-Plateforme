@@ -1,5 +1,6 @@
 import { Search, MapPin, Clock, DollarSign, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import JobLogo from '../../components/common/JobLogo'
 import { useJobs } from './useJobs'
 
 export default function JobsPage() {
@@ -130,9 +131,7 @@ export default function JobsPage() {
                   <div key={job.id} className="border border-border bg-card rounded-lg p-6 hover:shadow-lg transition">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-start gap-4 flex-1">
-                        <div className="w-16 h-16 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-lg">
-                          {job.logo}
-                        </div>
+                        <JobLogo text={job.logo || job.company || job.title} size="lg" />
                         <div className="flex-1">
                           <h3 className="text-xl font-bold text-foreground mb-1">{job.title}</h3>
                           <p className="text-muted-foreground mb-2">{job.company}</p>

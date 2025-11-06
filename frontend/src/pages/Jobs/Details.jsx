@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { MapPin, Clock, DollarSign, ArrowLeft, Upload, FileText, X, Paperclip, Trash2, Loader2 } from 'lucide-react'
+import JobLogo from '../../components/common/JobLogo'
 import { JOBS } from './data'
 import { useAuth } from '../../context/useAuth'
 import { API_BASE_URL } from '../../utils/config'
@@ -46,9 +47,7 @@ export default function JobDetailsPage() {
           <div className="md:col-span-2">
             <div className="border border-border bg-card rounded-lg p-6">
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-16 h-16 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-lg">
-                  {job.logo}
-                </div>
+                <JobLogo text={job.logo || job.company || job.title} size="xl" />
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-foreground mb-1">{job.title}</h2>
                   <p className="text-muted-foreground">{job.company}</p>
