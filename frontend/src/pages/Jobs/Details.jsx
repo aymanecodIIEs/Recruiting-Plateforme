@@ -406,6 +406,25 @@ function ApplyModal({ job, user, onClose }) {
       } else {
         setStatus({ type: 'success', text: 'Candidature envoyée avec succès !' })
       }
+      // Generate 10-question / 10-minute interview plan using the same CV + offer
+      try {
+        const interviewEndpoint = `${API_BASE_URL.replace(/\/$/, '')}/cv/interview`
+        const cvPayload = parsed || data?.analysis?.preview || parsed // prefer parsed JSON; fallback to preview text
+        const interviewRes = await fetch(interviewEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cv: cvPayload, offer }),
+        })
+        if (interviewRes.ok) {
+          const plan = await interviewRes.json()
+          console.log('Interview plan', plan)
+        } else {
+          const errTxt = await interviewRes.text().catch(() => '')
+          console.warn('Failed to generate interview plan', errTxt)
+        }
+      } catch (_e) {
+        console.warn('Interview generation request failed')
+      }
       setCvFile(null)
       setDocuments([])
       setForm((prev) => ({ ...prev, message: '' }))

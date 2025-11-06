@@ -11,6 +11,7 @@ function normalize(input) {
 }
 
 async function generateInterviewPlan(cv, offer) {
+     console.log("hereee")
   const cvText = normalize(cv)
   const offerText = normalize(offer)
   const instruction = `now from the following cv and job offer i want you to generate for me questions and time dedicated for each question depending on the complexity of hte question the total questions will be 10 and will have 10 minutes, \n\n i want questions to be diverse from pure technical ones especially about the prioritized technologies and if they were used in some projects ask about them\n\n ask about the company maybe ask soft skills questions like situations etc overall hr  questions`
@@ -37,6 +38,7 @@ async function generateInterviewPlan(cv, offer) {
   }
   const data = await response.json()
   const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  console.log(textOut)
   try {
     return JSON.parse(textOut)
   } catch (_e) {
