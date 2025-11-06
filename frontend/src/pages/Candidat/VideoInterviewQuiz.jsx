@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Clock, StopCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { API_BASE_URL } from '../../utils/config'
@@ -14,6 +14,11 @@ export default function VideoInterviewQuizPage() {
   const [meta, setMeta] = useState({ title: state?.jobTitle || 'Entretien vidéo', company: state?.company || 'Entreprise' })
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(false)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const chunksRef = useRef([])
+  const [recording, setRecording] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +58,7 @@ export default function VideoInterviewQuizPage() {
   const [questionSeconds, setQuestionSeconds] = useState(questions[0]?.maxSeconds ?? 60)
   const [interviewSeconds, setInterviewSeconds] = useState(interviewDuration)
   const [finished, setFinished] = useState(false)
+  const [recordingUrl, setRecordingUrl] = useState(null)
 
   const currentQuestion = questions[currentIndex]
 
@@ -93,6 +99,55 @@ export default function VideoInterviewQuizPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questions, interviewDuration])
 
+  // Initialize camera and start recording once questions are ready
+  useEffect(() => {
+    let cancelled = false
+    const start = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) return
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        if (cancelled) return
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          try { await videoRef.current.play() } catch (_e) {}
+        }
+        // Start recording
+        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8,opus' })
+        mediaRecorderRef.current = recorder
+        chunksRef.current = []
+        recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data) }
+        recorder.onstop = () => {
+          const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+          const url = URL.createObjectURL(blob)
+          setRecordingUrl(url)
+          // eslint-disable-next-line no-console
+          console.log('Interview recording ready:', { size: blob.size, url })
+          window.__interviewRecording__ = url
+        }
+        recorder.start(1000)
+        setRecording(true)
+      } catch (_e) {
+        // eslint-disable-next-line no-console
+        console.warn('Unable to access camera/microphone')
+      }
+    }
+    if (questions.length > 0 && !recording && !finished) start()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions.length])
+
+  // Cleanup media tracks on unmount
+  useEffect(() => {
+    return () => {
+      try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop() } catch (_e) {}
+      try {
+        const s = streamRef.current
+        if (s) s.getTracks().forEach((t) => t.stop())
+      } catch (_e2) {}
+    }
+  }, [])
+
   const handleNext = () => {
     if (currentIndex === questions.length - 1) {
       handleFinish()
@@ -105,15 +160,29 @@ export default function VideoInterviewQuizPage() {
 
   const handleFinish = () => {
     setFinished(true)
+    try { if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop() } catch (_e) {}
+    // Generate random score 70-80 and persist to backend if we have an application id
+    const randomScore = 70 + Math.floor(Math.random() * 11)
+    if (appId) {
+      try {
+        fetch(`${API_BASE_URL.replace(/\/$/, '')}/applications/${encodeURIComponent(appId)}/interview-result`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ score: randomScore }),
+        }).catch(() => {})
+      } catch (_e) {}
+    }
     setTimeout(() => {
       navigate('/candidat/quiz/resultat', {
         replace: true,
         state: {
+          id: appId,
           jobTitle,
           company,
           answered: questions.length,
           total: questions.length,
-          score: Math.floor(70 + Math.random() * 30),
+          score: randomScore,
+          recordingUrl,
         },
       })
     }, 1200)
@@ -157,11 +226,14 @@ export default function VideoInterviewQuizPage() {
 
         <section className="grid gap-6 grid-cols-[2fr,1fr]">
           {/* Left: video */}
-          <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-white/10 bg-black/60 shadow-inner">
-            <div className="absolute inset-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-slate-950/30 text-center">
-              <p className="text-lg font-semibold text-white/80">Prévisualisation caméra</p>
-              <p className="mt-2 text-xs text-slate-400">(Aperçu statique – branchement à un flux réel lors de l'intégration)</p>
-            </div>
+          <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-white/10 bg-black/80 shadow-inner">
+            <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
+            {!recording && (
+              <div className="absolute inset-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-slate-950/30 text-center">
+                <p className="text-lg font-semibold text-white/80">Activation caméra…</p>
+                <p className="mt-2 text-xs text-slate-400">Autorisez l'accès à la caméra et au micro pour démarrer.</p>
+              </div>
+            )}
           </div>
 
           {/* Right: question + timers as small bubbles */}

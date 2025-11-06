@@ -139,7 +139,7 @@ export default function MyApplicationsPage() {
       case 'rejete': return 'rejected'
       case 'accepte': return 'accepted'
       case 'cv_traite': return 'interview-scheduled'
-      case 'preselectionne': return 'interview-scheduled'
+      case 'preselectionne': return 'interview-passed'
       case 'soumis': return 'pending-review'
       case 'en_attente_interview': return 'pending-review'
       default: return 'pending-review'
@@ -251,6 +251,7 @@ export default function MyApplicationsPage() {
                 const link = a.offerMeta?.id ? `/jobs/${a.offerMeta.id}` : null
                 const score = typeof a.compatibilityScore === 'number' ? a.compatibilityScore : null
                 const reason = a.rejectionReason || null
+                const interviewScore = typeof a.interviewScore === 'number' ? a.interviewScore : null
                 return (
                   <article key={appId} className="space-y-4 rounded-3xl border border-border/60 bg-white/95 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -274,6 +275,9 @@ export default function MyApplicationsPage() {
                         {a.status === 'rejete' && reason ? (
                           <p className="mt-1 text-xs text-rose-600">Raison: {reason}</p>
                         ) : null}
+                        {interviewScore != null && (
+                          <p className="mt-2 text-xs text-slate-500">Score entretien: <span className="font-semibold text-slate-700">{interviewScore}%</span></p>
+                        )}
                       </div>
                       <div className={`px-4 py-2.5 rounded-full font-semibold text-sm inline-flex items-center gap-2 whitespace-nowrap border ${statusCls}`}>
                         {getStatusIcon(a.status)}
@@ -283,7 +287,9 @@ export default function MyApplicationsPage() {
 
                     <StatusTimelineLikeEspace status={mapped} />
 
-                    <ActionButtonLikeEspace id={appId} />
+                    {mapped === 'interview-scheduled' ? (
+                      <ActionButtonLikeEspace id={appId} />
+                    ) : null}
                   </article>
                 )
               })}

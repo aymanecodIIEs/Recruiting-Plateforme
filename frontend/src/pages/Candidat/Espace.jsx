@@ -185,7 +185,7 @@ export default function EspaceCandidatPage() {
                   accepte: 'accepted',
                   en_attente_interview: 'pending-review',
                   cv_traite: 'interview-scheduled',
-                  preselectionne: 'interview-scheduled',
+                  preselectionne: 'interview-passed',
                   soumis: 'pending-review',
                 }
                 const mappedStatus = statusMap[a.status] || 'pending-review'
@@ -199,6 +199,7 @@ export default function EspaceCandidatPage() {
                   location: a.location || '',
                   type: a.type || a.contractType || '',
                   status: mappedStatus,
+                  interviewScore: typeof a.interviewScore === 'number' ? a.interviewScore : null,
                 }
                 return (
                   <article key={appForUI.jobId} className="space-y-4 rounded-3xl border border-border/60 bg-white/95 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
@@ -215,6 +216,9 @@ export default function EspaceCandidatPage() {
                         {appForUI.status === 'rejected' && appForUI.rejectionReason ? (
                           <p className="mt-1 text-xs text-rose-600">Raison: {appForUI.rejectionReason}</p>
                         ) : null}
+                        {appForUI.interviewScore != null && (
+                          <p className="mt-2 text-xs text-slate-500">Score entretien: <span className="font-semibold text-slate-700">{appForUI.interviewScore}%</span></p>
+                        )}
                       </div>
                       <StatusPill status={appForUI.status} />
                     </div>

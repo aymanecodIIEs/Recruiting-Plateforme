@@ -1,18 +1,44 @@
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Trophy, ArrowRight, Sparkles } from 'lucide-react'
+import { API_BASE_URL } from '../../utils/config'
 
 export default function VideoInterviewResultPage() {
   const navigate = useNavigate()
   const { state } = useLocation()
+  const appId = state?.id || ''
   const jobTitle = state?.jobTitle || 'Entretien vidéo'
   const company = state?.company || 'Entreprise'
-  const score = state?.score ?? 82
+  const [score, setScore] = useState(state?.score ?? null)
+  const [status, setStatus] = useState('Présélectionné')
   const total = state?.total ?? 3
   const answered = state?.answered ?? total
 
   const handleBackToSpace = () => {
     navigate('/candidat/espace', { replace: true })
   }
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      if (!appId) return
+      try {
+        const res = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/applications/${encodeURIComponent(appId)}`)
+        if (!res.ok) throw new Error('load_failed')
+        const data = await res.json()
+        if (!cancelled) {
+          if (typeof data?.interviewScore === 'number') setScore(data.interviewScore)
+          if (data?.status) {
+            setStatus(data.status === 'preselectionne' ? 'Présélectionné' : data.status)
+          }
+        }
+      } catch (_e) {
+        // keep fallback state
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [appId])
 
   return (
     <main className="min-h-screen bg-linear-to-br from-background via-background to-primary/10 py-16 px-4">
@@ -28,9 +54,9 @@ export default function VideoInterviewResultPage() {
         <section className="grid gap-4 rounded-3xl border border-primary/20 bg-primary/5 p-6 text-primary">
           <p className="text-sm font-semibold uppercase tracking-wide">Résumé</p>
           <div className="grid gap-4 sm:grid-cols-3">
-            <HighlightCard label="Score" value={`${score}/100`} />
+            <HighlightCard label="Score" value={`${(score ?? 0)}/100`} />
             <HighlightCard label="Questions" value={`${answered} / ${total}`} />
-            <HighlightCard label="Statut" value="Soumis" />
+            <HighlightCard label="Statut" value={status} />
           </div>
         </section>
 

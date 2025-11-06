@@ -293,3 +293,21 @@ router.delete('/:id', async (req, res, next) => {
 })
 
 
+// Save interview result (score) and set status to preselectionne
+router.post('/:id/interview-result', async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const { score } = req.body || {}
+    const doc = await Application.findById(id)
+    if (!doc) return res.status(404).json({ error: 'not_found' })
+    const num = Math.max(0, Math.min(100, Math.round(Number(score) || 0)))
+    doc.interviewScore = num
+    doc.status = 'preselectionne'
+    await doc.save()
+    return res.json({ ok: true, id: String(doc._id), interviewScore: doc.interviewScore, status: doc.status })
+  } catch (err) {
+    return next(err)
+  }
+})
+
+

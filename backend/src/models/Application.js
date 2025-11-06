@@ -37,6 +37,7 @@ const ApplicationSchema = new mongoose.Schema(
       questions: { type: [mongoose.Schema.Types.Mixed] },
       notes: { type: String },
     },
+    interviewScore: { type: Number },
   },
   { timestamps: true }
 )
