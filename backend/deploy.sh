@@ -41,19 +41,33 @@ docker-compose down
 echo -e "${YELLOW}🚀 Starting containers...${NC}"
 docker-compose up -d
 
-echo -e "${YELLOW}⏳ Waiting for backend to be ready...${NC}"
-sleep 5
+echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
+sleep 10
 
-# Check health
+# Check backend health through Nginx
 for i in {1..30}; do
-    if curl -f http://localhost:4000/health > /dev/null 2>&1; then
+    if curl -f http://localhost/health > /dev/null 2>&1; then
         echo -e "${GREEN}✅ Backend is healthy!${NC}"
         break
     fi
     if [ $i -eq 30 ]; then
-        echo -e "${RED}❌ Backend health check failed after 30 attempts${NC}"
+        echo -e "${RED}❌ Health check failed after 30 attempts${NC}"
+        echo -e "${YELLOW}Checking container logs...${NC}"
         docker-compose logs backend
+        docker-compose logs nginx
         exit 1
+    fi
+    sleep 1
+done
+
+# Check Nginx
+for i in {1..10}; do
+    if curl -f http://localhost/api/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Nginx is routing correctly!${NC}"
+        break
+    fi
+    if [ $i -eq 10 ]; then
+        echo -e "${YELLOW}⚠️  Nginx routing check failed, but backend is up${NC}"
     fi
     sleep 1
 done
@@ -64,7 +78,15 @@ echo "📊 Container status:"
 docker-compose ps
 
 echo ""
-echo "📝 View logs with: docker-compose logs -f backend"
+echo "🌐 Services available at:"
+echo "   - API: http://localhost/api"
+echo "   - Health: http://localhost/health"
+echo ""
+echo "📝 View logs:"
+echo "   - Backend: docker-compose logs -f backend"
+echo "   - Nginx: docker-compose logs -f nginx"
+echo "   - All: docker-compose logs -f"
+echo ""
 echo "🛑 Stop with: docker-compose down"
-echo "🔄 Restart with: docker-compose restart backend"
+echo "🔄 Restart with: docker-compose restart"
 
