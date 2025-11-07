@@ -47,9 +47,17 @@ const corsOptions = {
 
 
 async function start() {
+  // Load .env file explicitly
+  const envPath = path.resolve(__dirname, '..', '.env')
+  require('dotenv').config({ path: envPath })
+  
+  // Get MONGO_URI from environment (from .env file or docker-compose environment)
   const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/recruiting'
+  
   // eslint-disable-next-line no-console
   console.log('[mongo] Using connection string prefix:', uri.slice(0, Math.min(40, uri.length)) + '...')
+  // eslint-disable-next-line no-console
+  console.log('[mongo] MONGO_URI from env:', process.env.MONGO_URI ? 'SET' : 'NOT SET')
   // Set a short selection timeout to fail fast in dev if Mongo isn't running
   attachMongoDebugLogs(uri)
   await preflightTcpCheck(uri)

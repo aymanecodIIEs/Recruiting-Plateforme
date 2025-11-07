@@ -20,6 +20,18 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+# Load environment variables from .env file
+echo -e "${YELLOW}📤 Loading environment variables from .env...${NC}"
+export $(grep -v '^#' .env | xargs)
+
+# Verify MONGO_URI is set
+if [ -z "$MONGO_URI" ]; then
+    echo -e "${RED}❌ Error: MONGO_URI is not set in .env file!${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Environment variables loaded${NC}"
+
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}❌ Docker is not installed!${NC}"
