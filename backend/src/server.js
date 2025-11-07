@@ -29,6 +29,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
+const cors = require('cors');
 
 app.use('/api/cv', cvRoutes)
 app.use('/api/users', usersRoutes)
@@ -39,6 +40,11 @@ app.use('/api/offers', offersRoutes)
 app.use('/api/applications', applicationsRoutes)
 
 app.use(errorHandler)
+const corsOptions = {
+  origin: 'https://successpool.vercel.app/', // URL de ton front
+  methods: 'GET,POST,PUT,DELETE', // méthodes autorisées
+};
+
 
 async function start() {
   const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/recruiting'
