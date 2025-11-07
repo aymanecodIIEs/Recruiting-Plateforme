@@ -11,6 +11,16 @@ if (typeof Promise.withResolvers === 'undefined') {
     })
     return { promise, resolve, reject }
   }
+  // eslint-disable-next-line no-console
+  console.log('[polyfill] Promise.withResolvers polyfill loaded')
+} else {
+  // eslint-disable-next-line no-console
+  console.log('[polyfill] Promise.withResolvers already available')
+}
+
+// Ensure it's available globally
+if (typeof global !== 'undefined' && typeof global.Promise !== 'undefined') {
+  global.Promise.withResolvers = Promise.withResolvers
 }
 
 module.exports = {}

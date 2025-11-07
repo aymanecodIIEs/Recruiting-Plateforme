@@ -11,6 +11,16 @@ async function extractCvText(req, res, next) {
       return res.status(400).json({ error: 'No file uploaded. Expected field "cv" of type PDF.' })
     }
 
+    // Verify polyfill is loaded before dynamic import
+    if (typeof Promise.withResolvers === 'undefined') {
+      // eslint-disable-next-line no-console
+      console.error('[cvController] Promise.withResolvers polyfill not loaded! Loading now...')
+      require('../utils/polyfill')
+      if (typeof Promise.withResolvers === 'undefined') {
+        return res.status(500).json({ error: 'Promise.withResolvers polyfill failed to load' })
+      }
+    }
+
     const data = new Uint8Array(req.file.buffer)
     // Dynamically import the ESM build of pdfjs (installed as pdfjs-dist). In Node we
     // load the ESM module at runtime and use its exports. This avoids requiring a
