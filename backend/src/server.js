@@ -1,3 +1,6 @@
+// Load polyfill first (before any dynamic imports)
+require('./utils/polyfill')
+
 const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')

@@ -1,3 +1,6 @@
+// Load polyfill before dynamic import
+require('../utils/polyfill')
+
 const { extractCvData } = require('../services/cvParser')
 const { scoreCvAgainstOffer } = require('../services/compatibilityScorer')
 const { generateInterviewPlan } = require('../services/interviewGenerator')
