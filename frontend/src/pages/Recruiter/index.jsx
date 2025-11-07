@@ -230,9 +230,12 @@ function resolveApiBases() {
   const bases = []
   const envBase = typeof window !== "undefined" ? (window?.VITE_API_BASE || import.meta?.env?.VITE_API_BASE) : undefined
   if (envBase) bases.push(String(envBase))
-  // Prefer backend default port first in dev
-  bases.push("https://ec2-35-180-152-70.eu-west-3.compute.amazonaws.com")
-  if (typeof window !== "undefined" && window.location?.origin) bases.push(window.location.origin)
+  // Use relative path for Docker deployment (same domain)
+  if (typeof window !== "undefined" && window.location?.origin) {
+    bases.push(window.location.origin)
+  }
+  // Fallback for development
+  bases.push("http://localhost:4000")
   return Array.from(new Set(bases))
 }
 

@@ -66,29 +66,46 @@ echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
 sleep 10
 
 # Check backend health through Nginx
+echo -e "${YELLOW}⏳ Waiting for backend...${NC}"
 for i in {1..30}; do
     if curl -f http://localhost/health > /dev/null 2>&1; then
         echo -e "${GREEN}✅ Backend is healthy!${NC}"
         break
     fi
     if [ $i -eq 30 ]; then
-        echo -e "${RED}❌ Health check failed after 30 attempts${NC}"
+        echo -e "${RED}❌ Backend health check failed after 30 attempts${NC}"
         echo -e "${YELLOW}Checking container logs...${NC}"
         $DOCKER_COMPOSE logs backend
-        $DOCKER_COMPOSE logs nginx
         exit 1
     fi
     sleep 1
 done
 
-# Check Nginx
+# Check frontend
+echo -e "${YELLOW}⏳ Waiting for frontend...${NC}"
+for i in {1..30}; do
+    if curl -f http://localhost/ > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Frontend is healthy!${NC}"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo -e "${RED}❌ Frontend health check failed after 30 attempts${NC}"
+        echo -e "${YELLOW}Checking container logs...${NC}"
+        $DOCKER_COMPOSE logs frontend
+        exit 1
+    fi
+    sleep 1
+done
+
+# Check Nginx routing
+echo -e "${YELLOW}⏳ Checking Nginx routing...${NC}"
 for i in {1..10}; do
     if curl -f http://localhost/api/health > /dev/null 2>&1; then
-        echo -e "${GREEN}✅ Nginx is routing correctly!${NC}"
+        echo -e "${GREEN}✅ Nginx is routing API correctly!${NC}"
         break
     fi
     if [ $i -eq 10 ]; then
-        echo -e "${YELLOW}⚠️  Nginx routing check failed, but backend is up${NC}"
+        echo -e "${YELLOW}⚠️  Nginx API routing check failed${NC}"
     fi
     sleep 1
 done
@@ -100,10 +117,12 @@ $DOCKER_COMPOSE ps
 
 echo ""
 echo "🌐 Services available at:"
+echo "   - Frontend: http://localhost/"
 echo "   - API: http://localhost/api"
 echo "   - Health: http://localhost/health"
 echo ""
 echo "📝 View logs:"
+echo "   - Frontend: $DOCKER_COMPOSE logs -f frontend"
 echo "   - Backend: $DOCKER_COMPOSE logs -f backend"
 echo "   - Nginx: $DOCKER_COMPOSE logs -f nginx"
 echo "   - All: $DOCKER_COMPOSE logs -f"
