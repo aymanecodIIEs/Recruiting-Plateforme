@@ -26,6 +26,17 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
+# Check if Docker daemon is running
+if ! docker ps &> /dev/null; then
+    echo -e "${RED}❌ Docker daemon is not running!${NC}"
+    echo ""
+    echo "Please start Docker:"
+    echo "  sudo systemctl start docker"
+    echo ""
+    echo "Or run: sudo ./start-docker.sh"
+    exit 1
+fi
+
 # Detect Docker Compose command (docker-compose or docker compose)
 if command -v docker-compose &> /dev/null; then
     DOCKER_COMPOSE="docker-compose"
@@ -42,7 +53,8 @@ fi
 echo -e "${GREEN}✅ Using: $DOCKER_COMPOSE${NC}"
 
 echo -e "${YELLOW}📦 Building Docker images...${NC}"
-$DOCKER_COMPOSE build
+# Use DOCKER_BUILDKIT=0 to avoid buildx requirement if needed
+DOCKER_BUILDKIT=0 $DOCKER_COMPOSE build || $DOCKER_COMPOSE build
 
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
 $DOCKER_COMPOSE down
