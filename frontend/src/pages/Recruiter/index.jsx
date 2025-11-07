@@ -231,7 +231,7 @@ function resolveApiBases() {
   const envBase = typeof window !== "undefined" ? (window?.VITE_API_BASE || import.meta?.env?.VITE_API_BASE) : undefined
   if (envBase) bases.push(String(envBase))
   // Prefer backend default port first in dev
-  bases.push("http://ec2-35-180-152-70.eu-west-3.compute.amazonaws.com")
+  bases.push("https://ec2-35-180-152-70.eu-west-3.compute.amazonaws.com")
   if (typeof window !== "undefined" && window.location?.origin) bases.push(window.location.origin)
   return Array.from(new Set(bases))
 }
