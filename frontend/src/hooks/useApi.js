@@ -3,7 +3,17 @@ import { API_BASE_URL } from '../utils/config'
 
 export function useApi() {
   const request = useCallback(async (path, { method = 'GET', headers, body, query } = {}) => {
-    const url = new URL(`${API_BASE_URL}${path}`)
+    // Handle relative URLs (for Docker deployment) and absolute URLs
+    let url
+    if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+      // Absolute URL
+      url = new URL(`${API_BASE_URL}${path}`)
+    } else {
+      // Relative URL - use current origin
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+      url = new URL(`${API_BASE_URL}${path}`, baseUrl)
+    }
+    
     if (query && typeof query === 'object') {
       Object.entries(query).forEach(([k, v]) => {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v))

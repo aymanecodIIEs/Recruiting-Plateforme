@@ -128,7 +128,6 @@ async function attachUserFiles(req, res, next) {
   }
 }
 
-module.exports = { createUser, updateUserProfile, attachUserFiles }
 async function getUser(req, res, next) {
   try {
     const { id } = req.params
